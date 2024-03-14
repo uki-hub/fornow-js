@@ -6,4 +6,24 @@
   html body {
     @apply relative m-0 p-0;
   }
+
+  /* width */
+  ::-webkit-scrollbar {
+    @apply w-[7px]
+  }
+
+  /* Track */
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-200
+  }
+
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-400
+  }
+
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400
+  }
 }

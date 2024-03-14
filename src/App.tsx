@@ -3,6 +3,7 @@ import { EndPointModel } from "./models/EndPointModel";
 import style from "./App.module.css";
 import { Bounce, Slide, ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.min.css";
+import ViewToggle from "./components/ViewToggle";
 
 const App = () => {
   const [data, setData] = useState<EndPointModel[]>();
@@ -19,13 +20,18 @@ const App = () => {
 
     fetch("/api")
       .then((r) => r.json())
-      .then((json) => {
-        setData(json);
-        console.log("fetching...");
-      });
+      .then(setData);
+
+    setInterval(() => {
+      fetch("/api")
+        .then((r) => r.json())
+        .then(setData);
+    }, 2000);
   }, []);
 
-  const selectedData: EndPointModel | undefined = !data && index == -1 ? undefined : data![index];
+  const filteredData = data?.filter((d) => d.url.includes(filter));
+
+  const selectedData: EndPointModel | undefined = !filteredData && index == -1 ? undefined : filteredData![index];
 
   function cilpboardUrl() {
     var textArea = document.createElement("textarea");
@@ -67,11 +73,13 @@ const App = () => {
         transition={Bounce}
       />
       <div className="flex w-full h-screen">
-        <div className="flex flex-col gap-4 h-full p-4 overflow-y-auto bg-gray-200 lg:w-1/3 md:w-1/2 md:shrink-0">
-          <input ref={searchRef} placeholder="Search..." className="px-3 py-2 rounded border outline-none" />
-          {data
-            ?.filter((d) => d.url.includes(filter))
-            ?.map((d, i) => {
+        <div className="flex flex-col h-full border-r lg:w-1/3 md:w-1/2 md:shrink-0">
+          <div className="flex flex-col gap-1 shadow border-b py-4 px-4">
+            <h1 className="text-lg font-mono text-gray-300">fornow-js</h1>
+            <input ref={searchRef} placeholder="Search..." className="px-3 py-2 rounded border outline-none" />
+          </div>
+          <div className="pt-4 px-4 flex flex-col gap-4 h-full overflow-y-auto">
+            {filteredData?.map((d, i) => {
               let rowClass = style["api-row"];
 
               if (i == index) rowClass += " " + style["row-active"];
@@ -82,6 +90,18 @@ const App = () => {
                 </div>
               );
             })}
+            {filteredData?.map((d, i) => {
+              let rowClass = style["api-row"];
+
+              if (i == index) rowClass += " " + style["row-active"];
+
+              return (
+                <div key={i} onClick={() => setIndex(i)} className={rowClass}>
+                  {d.url}
+                </div>
+              );
+            })}
+          </div>
         </div>
         <div className="flex flex-col w-full p-4 overflow-y-auto">
           {selectedData && (
@@ -124,6 +144,16 @@ const App = () => {
                 )}
                 <h2 className="font-semibold mb-1 text-gray-600">Response</h2>
                 <div className="text-sm px-2 py-2 text-gray-500 bg-gray-100">{JSON.stringify(selectedData.POST.response)}</div>
+                {selectedData.POST.requests.length > 0 && (
+                  <div className="mt-3">
+                    <h2 className="font-semibold mb-1 text-gray-600">Received request</h2>
+                    <div className="h-full flex flex-col gap-4 text-sm">
+                      {selectedData.POST.requests.map((r, i) => (
+                        <ViewToggle key={i} name={r.fileName} content={r.body} />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

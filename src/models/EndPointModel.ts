@@ -4,9 +4,15 @@ interface EndPointModel {
   GET?: GetConfigModel;
 }
 
+interface PostRequestModel {
+  fileName: string;
+  body: string;
+}
+
 interface PostConfigModel {
   config?: ApiConfigModel;
   response: any;
+  requests: PostRequestModel[];
 }
 
 interface GetConfigModel {
@@ -21,4 +27,4 @@ interface ApiConfigModel {
   statusCode?: 200;
 }
 
-export type { EndPointModel, PostConfigModel, GetConfigModel, ApiConfigModel };
+export type { EndPointModel, PostConfigModel, GetConfigModel, ApiConfigModel, PostRequestModel };

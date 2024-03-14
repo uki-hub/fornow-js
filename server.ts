@@ -1,9 +1,13 @@
 import express from "express";
 import ViteExpress from "vite-express";
-import { readdirSync, readFileSync } from "fs";
-import { EndPointModel, PostConfigModel, GetConfigModel, ApiConfigModel } from "./src/models/EndPointModel";
+import bodyParser from "body-parser";
+import { readdirSync, readFileSync, mkdirSync, writeFileSync, existsSync, statSync } from "fs";
+import { EndPointModel, PostConfigModel, GetConfigModel, ApiConfigModel, PostRequestModel } from "./src/models/EndPointModel";
+import path from "path";
 
 const app = express();
+
+app.use(bodyParser.json());
 
 app.use((req, res, next) => {
   const arrUrl = req.originalUrl.split("/");
@@ -13,10 +17,16 @@ app.use((req, res, next) => {
     return;
   }
 
-  const apiTarget = `./public/Endpoints/${arrUrl.splice(2).join("/")}/${req.method}.json`;
+  const apiTarget = `./public/Endpoints/${arrUrl.splice(2).join("/")}`;
 
   try {
-    const rawResponse = readFIle(apiTarget);
+    if (!existsSync(`${apiTarget}/_REQUEST`)) mkdirSync(`${apiTarget}/_REQUEST`);
+
+    const newFileName = `${formatDateToString()}.json`;
+
+    writeFileSync(`${apiTarget}/_REQUEST/${newFileName}`, JSON.stringify(req.body), "utf8");
+
+    const rawResponse = readFIle(`${apiTarget}/${req.method}.json`);
 
     res.send(rawResponse);
   } catch (error) {
@@ -44,6 +54,18 @@ app.get("/api", (_, res) => {
     const getConfig = readFIleToObject<ApiConfigModel>(`${endpoint}/_GET.json`);
     const postConfig = readFIleToObject<ApiConfigModel>(`${endpoint}/_POST.json`);
 
+    const requests: PostRequestModel[] = [];
+    const reqFiles = readFilesSync(`${endpoint}/_REQUEST`);
+
+    for (let j = 0; j < reqFiles.length; j++) {
+      const req = readFIleToObject<string>(`${endpoint}/_REQUEST/${reqFiles[j]}`);
+
+      requests.push({
+        fileName: reqFiles[j],
+        body: req!,
+      });
+    }
+
     const GET: GetConfigModel | undefined = getResponse
       ? {
           config: getConfig,
@@ -55,6 +77,7 @@ app.get("/api", (_, res) => {
       ? {
           config: postConfig,
           response: postResponse,
+          requests: requests,
         }
       : undefined;
 
@@ -72,7 +95,7 @@ ViteExpress.listen(app, 1551, () => console.log("Server is listening..."));
 
 const getDirectories = (source): string[] => {
   return readdirSync(source, { withFileTypes: true })
-    .filter((dirent) => dirent.isDirectory())
+    .filter((dirent) => dirent.isDirectory() && dirent.name != "_REQUEST")
     .map((dirent) => dirent.name);
 };
 
@@ -103,3 +126,36 @@ const readFIleToObject = <T>(filePath: string) => {
     return undefined;
   }
 };
+
+function readFilesSync(dir) {
+  const files: string[] = [];
+
+  if (!existsSync(dir)) return [];
+
+  readdirSync(dir).forEach((filename) => {
+    const name = path.parse(filename).name;
+    // const ext = path.parse(filename).ext;
+    const filepath = path.resolve(dir, filename);
+    const stat = statSync(filepath);
+    const isFile = stat.isFile();
+
+    if (isFile) files.push(`${name}.json`);
+  });
+
+  files.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+
+  return files;
+}
+
+function formatDateToString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+  const milliseconds = String(now.getMilliseconds()).padStart(3, "0");
+
+  return `${year}${month}${day}-${hours}.${minutes}.${seconds}'${milliseconds}`;
+}
