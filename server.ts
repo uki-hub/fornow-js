@@ -1,13 +1,22 @@
 import express from "express";
 import ViteExpress from "vite-express";
 import bodyParser from "body-parser";
-import { readdirSync, readFileSync, mkdirSync, writeFileSync, existsSync, statSync } from "fs";
+import { readdirSync, readFileSync, mkdirSync, writeFileSync, existsSync, rmSync } from "fs";
 import { EndPointModel, PostConfigModel, GetConfigModel, ApiConfigModel, PostRequestModel } from "./src/models/EndPointModel";
+import DelPayloadModel from "./src/models/DelPayloadModel";
+import ClearPayloadModel from "./src/models/ClearPayloadModel";
 import path from "path";
 
 const app = express();
 
-app.use(bodyParser.json());
+app.use(
+  bodyParser.urlencoded({
+    parameterLimit: 100000,
+    limit: "100mb",
+    extended: true,
+  })
+);
+app.use(bodyParser.json({ limit: "100mb" }));
 
 app.use((req, res, next) => {
   const arrUrl = req.originalUrl.split("/");
@@ -89,6 +98,46 @@ app.get("/api", (_, res) => {
   }
 
   res.send(JSON.stringify(result));
+});
+
+app.post("/del", (req, res) => {
+  try {
+    const payload = req.body as DelPayloadModel;
+
+    const apiTarget = `./public/Endpoints/${payload.path}`;
+
+    const fileTarget = `${apiTarget}/_REQUEST/${payload.reqFile}`;
+
+    if (existsSync(fileTarget)) rmSync(fileTarget, { force: true });
+
+    res.send({
+      status: true,
+    });
+  } catch (error) {
+    res.send({
+      status: false,
+      error: error,
+    });
+  }
+});
+
+app.post("/clear", (req, res) => {
+  try {
+    const payload = req.body as DelPayloadModel;
+
+    const apiTarget = `./public/Endpoints/${payload.path}`;
+
+    if (existsSync(apiTarget)) rmSync(apiTarget, { recursive: true, force: true });
+
+    res.send({
+      status: true,
+    });
+  } catch (error) {
+    res.send({
+      status: false,
+      error: error,
+    });
+  }
 });
 
 ViteExpress.listen(app, 1551, () => console.log("Server is listening..."));
