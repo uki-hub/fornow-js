@@ -1,7 +1,7 @@
 import express from "express";
 import ViteExpress from "vite-express";
 import bodyParser from "body-parser";
-import { readdirSync, readFileSync, mkdirSync, writeFileSync, existsSync, rmSync } from "fs";
+import { readdirSync, readFileSync, mkdirSync, writeFileSync, existsSync, rmSync, statSync } from "fs";
 import { EndPointModel, PostConfigModel, GetConfigModel, ApiConfigModel, PostRequestModel } from "./src/models/EndPointModel";
 import DelPayloadModel from "./src/models/DelPayloadModel";
 import ClearPayloadModel from "./src/models/ClearPayloadModel";
@@ -104,16 +104,17 @@ app.post("/del", (req, res) => {
   try {
     const payload = req.body as DelPayloadModel;
 
-    const apiTarget = `./public/Endpoints/${payload.path}`;
+    const apiTarget = `./public/Endpoints/${payload.path.replace("/api/", "")}`;
 
     const fileTarget = `${apiTarget}/_REQUEST/${payload.reqFile}`;
 
-    if (existsSync(fileTarget)) rmSync(fileTarget, { force: true });
+    rmSync(fileTarget);
 
     res.send({
       status: true,
     });
   } catch (error) {
+    console.log(error);
     res.send({
       status: false,
       error: error,
@@ -125,14 +126,18 @@ app.post("/clear", (req, res) => {
   try {
     const payload = req.body as DelPayloadModel;
 
-    const apiTarget = `./public/Endpoints/${payload.path}`;
+    const apiTarget = `./public/Endpoints/${payload.path.replace("/api/", "")}/_REQUEST`;
 
-    if (existsSync(apiTarget)) rmSync(apiTarget, { recursive: true, force: true });
+    console.log(apiTarget);
+
+    rmSync(apiTarget, { recursive: true, force: true });
 
     res.send({
       status: true,
     });
   } catch (error) {
+    console.log(error);
+
     res.send({
       status: false,
       error: error,
