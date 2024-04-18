@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { PostRequestModel } from "../models/EndPointModel";
+import { useEffect, useState } from "react";
+import { PostRequestModel } from "../models/EndpointModel";
 import CopyButton from "./CopyButton";
 
 interface Props {
@@ -10,14 +10,14 @@ interface Props {
 const EndpointDetail = ({ path, requests }: Props) => {
   const [requestIndex, setRequestIndex] = useState(-1);
 
-  if (requestIndex != -1 && requests[requestIndex] == undefined) setRequestIndex(-1);
+  // if (requestIndex != -1 && requests[requestIndex] == undefined) setRequestIndex(-1);
 
   let requestList: JSX.Element;
   if (requests.length <= 0) {
-    requestList = <div className="h-full flex justify-center items-center text-3xl font-semibold text-gray-300">. . .</div>;
+    requestList = <div className="min-h-[60%] flex justify-center items-center  shrink-0 text-3xl font-semibold text-gray-300">. . .</div>;
   } else {
     requestList = (
-      <div className="flex flex-col gap-3 py-2 pl-3 pr-2 text-sm overflow-y-auto">
+      <div className="flex flex-col gap-3 py-3 pl-3 pr-2 text-sm overflow-y-auto">
         {requests.map((r, i) => (
           <div
             onClick={() => setRequestIndex(i)}
@@ -92,6 +92,10 @@ const EndpointDetail = ({ path, requests }: Props) => {
         if (r?.status) setRequestIndex(-1);
       });
   };
+
+  useEffect(() => {
+    return () => setRequestIndex(-1);
+  }, [path]);
 
   return (
     <div className="w-full h-full flex gap-4 px-4 pb-4 overflow-y-auto">

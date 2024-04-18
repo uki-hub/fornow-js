@@ -2,7 +2,7 @@ import express from "express";
 import ViteExpress from "vite-express";
 import bodyParser from "body-parser";
 import { readdirSync, readFileSync, mkdirSync, writeFileSync, existsSync, rmSync, statSync } from "fs";
-import { EndPointModel, PostConfigModel, GetConfigModel, ApiConfigModel, PostRequestModel } from "./src/models/EndPointModel";
+import { EndpointModel, PostConfigModel, GetConfigModel, ApiConfigModel, PostRequestModel } from "./src/models/EndpointModel";
 import DelPayloadModel from "./src/models/DelPayloadModel";
 import ClearPayloadModel from "./src/models/ClearPayloadModel";
 import path from "path";
@@ -48,7 +48,7 @@ app.use((req, res, next) => {
 });
 
 app.get("/api", (_, res) => {
-  const result: EndPointModel[] = [];
+  const result: EndpointModel[] = [];
 
   const endpoints = getEndpoints("./public/Endpoints");
 
