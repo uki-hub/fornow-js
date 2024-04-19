@@ -2,10 +2,12 @@ import express from "express";
 import ViteExpress from "vite-express";
 import bodyParser from "body-parser";
 import { readdirSync, readFileSync, mkdirSync, writeFileSync, existsSync, rmSync, statSync } from "fs";
-import { EndpointModel, PostConfigModel, GetConfigModel, ApiConfigModel, PostRequestModel } from "./src/models/EndpointModel";
-import DelPayloadModel from "./src/models/DelPayloadModel";
-import ClearPayloadModel from "./src/models/ClearPayloadModel";
 import path from "path";
+import RequestDelModel from "./src/models/requests/RequestDelModel";
+import RequestClearModel from "./src/models/requests/RequestClearModel";
+import LogFileModel from "./src/models/LogFileModel";
+import ResponseGetEndpointsModel from "./src/models/responses/ResponseGetEndpointsModel";
+import PayloadGetEndpointsModel, { PayloadEndpointDataModel } from "./src/models/payloads/PayloadGetEndpointsModel";
 
 const app = express();
 
@@ -48,49 +50,51 @@ app.use((req, res, next) => {
 });
 
 app.get("/api", (_, res) => {
-  const result: EndpointModel[] = [];
+  const result: PayloadGetEndpointsModel = {
+    endpoints: [],
+  };
 
   const endpoints = getEndpoints("./public/Endpoints");
 
   for (let i = 0; i < endpoints.length; i++) {
     const endpoint = endpoints[i];
 
-    const getResponse = readFIleToObject<string>(`${endpoint}/GET.json`);
-    const postResponse = readFIleToObject<string>(`${endpoint}/POST.json`);
+    const getResponse = readFIleToObject<Object>(`${endpoint}/GET.json`);
+    const postResponse = readFIleToObject<Object>(`${endpoint}/POST.json`);
 
     if (!getResponse && !postResponse) continue;
 
-    const getConfig = readFIleToObject<ApiConfigModel>(`${endpoint}/_GET.json`);
-    const postConfig = readFIleToObject<ApiConfigModel>(`${endpoint}/_POST.json`);
+    const getConfig = readFIleToObject<Object>(`${endpoint}/_GET.json`);
+    const postConfig = readFIleToObject<Object>(`${endpoint}/_POST.json`);
 
-    const requests: PostRequestModel[] = [];
+    const logFiles: LogFileModel[] = [];
     const reqFiles = readFilesSync(`${endpoint}/_REQUEST`);
 
     for (let j = 0; j < reqFiles.length; j++) {
-      const req = readFIleToObject<string>(`${endpoint}/_REQUEST/${reqFiles[j]}`);
+      const req = readFIleToObject<Object>(`${endpoint}/_REQUEST/${reqFiles[j]}`);
 
-      requests.push({
+      logFiles.push({
         fileName: reqFiles[j],
         body: req!,
       });
     }
 
-    const GET: GetConfigModel | undefined = getResponse
+    const GET: PayloadEndpointDataModel | undefined = getResponse
       ? {
           config: getConfig,
           response: getResponse,
         }
       : undefined;
 
-    const POST: PostConfigModel | undefined = postResponse
+    const POST: PayloadEndpointDataModel | undefined = postResponse
       ? {
           config: postConfig,
           response: postResponse,
-          requests: requests,
+          logs: logFiles,
         }
       : undefined;
 
-    result.push({
+    result.endpoints.push({
       url: endpoint.replace("./public/Endpoints", "/api"),
       GET,
       POST,
@@ -102,7 +106,7 @@ app.get("/api", (_, res) => {
 
 app.post("/del", (req, res) => {
   try {
-    const payload = req.body as DelPayloadModel;
+    const payload = req.body as RequestDelModel;
 
     const apiTarget = `./public/Endpoints/${payload.path.replace("/api/", "")}`;
 
@@ -124,7 +128,7 @@ app.post("/del", (req, res) => {
 
 app.post("/clear", (req, res) => {
   try {
-    const payload = req.body as DelPayloadModel;
+    const payload = req.body as RequestClearModel;
 
     const apiTarget = `./public/Endpoints/${payload.path.replace("/api/", "")}/_REQUEST`;
 

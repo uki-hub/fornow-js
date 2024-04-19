@@ -22,7 +22,7 @@ const LandingPage = () => {
         </div>
       </div>
 
-      <EndpointContent endpoint={selectedData} />
+      {/* <EndpointContent /> */}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import EndpointConfigModel from "./EndpointConfigModel";
+import EndpointLogModel from "./EndpointLogModel";
 
 export default interface BaseEndpointModel {
   id: string;
@@ -6,4 +7,5 @@ export default interface BaseEndpointModel {
   method: "GET" | "POST";
   response: string;
   config?: EndpointConfigModel;
+  logs: EndpointLogModel[];
 }
